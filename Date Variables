@@ -1,0 +1,36 @@
+vars AS (
+  SELECT PARSE_DATE('%Y%m%d', @DS_START_DATE) as current_start_date, PARSE_DATE('%Y%m%d', @DS_END_DATE) as current_end_date ),
+  --SELECT DATE '2023-04-10' as current_start_date, DATE '2023-04-12' as current_end_date ),
+date_vars as (
+                select *,
+
+                date_trunc(current_start_date, week(MONDAY)) as current_start_week,
+                date_add(date_trunc(current_start_date, week(MONDAY)), interval 6 day) as current_end_week,
+
+                date_sub(date_trunc(current_start_date, week(MONDAY)), interval 1 week) as previous_start_week, 
+                date_sub(date_trunc(current_start_date, week(MONDAY)), interval 1 day) as previous_end_week ,
+
+                date_sub(case when (current_end_date = current_date()) or (current_date() between current_start_date and current_end_date) then current_date() else date_add(date_trunc(current_start_date, week(MONDAY)), interval 6 day) end, interval 30 day) as current_start_month,
+                case when (current_end_date = current_date()) or (current_date() between current_start_date and current_end_date) then current_date() else date_add(date_trunc(current_start_date, week(MONDAY)), interval 6 day) end as current_end_month,
+
+                date_sub(date_sub(date_trunc(current_start_date, week(MONDAY)), interval 1 day), interval 30 day) as previous_start_month,
+                date_sub(date_trunc(current_start_date, week(MONDAY)), interval 1 day) as previous_end_month,
+
+                date_sub(date_trunc(current_start_date, week(MONDAY)), interval 2 week) as previous_previous_start_week, 
+                date_add(date_sub(date_trunc(current_start_date, week(MONDAY)), interval 2 week), interval 6 day) as previous_previous_end_week ,
+
+                case when date_trunc(current_date(),month) = date_trunc(current_end_date, month) then date_trunc(current_end_date, month) else date_trunc(current_start_date, month) end  as month_to_date_start,
+                case when (current_end_date = current_date()) or (current_date() between current_start_date and current_end_date) then current_date() 
+                else current_end_date end as month_to_date_end,
+
+                date_sub(case when date_trunc(current_date(),month) = date_trunc(current_end_date, month) then date_trunc(current_end_date, month) else date_trunc(current_start_date, month) end , interval 1 month) as previous_month_to_date_start,
+                date_sub(case when date_trunc(current_date(),month) = date_trunc(current_end_date, month) then date_trunc(current_end_date, month) else date_trunc(current_start_date, month) end, interval 1 day) as previous_month_to_date_end,
+                --case when (current_end_date = current_date()) or (current_date() between current_start_date and current_end_date) then date_sub(current_date(), interval 1 month)else date_sub(current_end_date, interval 1 month) end as previous_month_to_date_end,
+
+                case when date_trunc(current_date(),week(MONDAY)) = date_trunc(current_start_date, week(MONDAY)) then date_diff(current_date(),date_trunc(current_start_date, week(MONDAY)) , day) else date_diff(date_add(date_trunc(current_start_date, week(MONDAY)), interval 6 day),date_trunc(current_start_date, week(MONDAY)),day) end as current_wtd_days,
+
+                case when date_trunc(current_date(),month) = date_trunc(current_start_date, month) and date_trunc(current_date(),week(MONDAY)) = date_trunc(current_start_date, week(MONDAY)) then date_diff(current_date(),date_trunc(current_start_date, month), day) else date_diff(date_sub(current_end_date, interval 1 day),date_trunc(current_end_date, month)- 1,day) end as mtd_days
+              
+                from vars
+                )
+      select * from date_vars
